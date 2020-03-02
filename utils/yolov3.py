@@ -398,18 +398,19 @@ class TrtYOLOv3(object):
     def _create_context(self):
         return self.engine.create_execution_context()
 
-    def __init__(self, model, input_shape=(416, 416)):
+    def __init__(self, model, input_shape=(416, 416), category_num=80):
         """Initialize TensorRT plugins, engine and conetxt."""
         self.model = model
         self.input_shape = input_shape
         h, w = input_shape
+        filter_num = 3 * (5+category_num)
         if 'tiny' in model:
-            self.output_shapes = [(1, 255, h // 32, w // 32),
-                                  (1, 255, h // 16, w // 16)]
+            self.output_shapes = [(1, filter_num, h // 32, w // 32),
+                                  (1, filter_num, h // 16, w // 16)]
         else:
-            self.output_shapes = [(1, 255, h // 32, w // 32),
-                                  (1, 255, h // 16, w // 16),
-                                  (1, 255, h //  8, w //  8)]
+            self.output_shapes = [(1, filter_num, h // 32, w // 32),
+                                  (1, filter_num, h // 16, w // 16),
+                                  (1, filter_num, h //  8, w //  8)]
         if 'tiny' in model:
             postprocessor_args = {
                 # A list of 2 three-dimensional tuples for the Tiny YOLO masks
@@ -452,7 +453,7 @@ class TrtYOLOv3(object):
         del self.outputs
         del self.inputs
 
-    def detect(self, img, conf_th=0.3):
+    def detect(self, img, conf_th=0.8):
         """Detect objects in the input image."""
         shape_orig_WH = (img.shape[1], img.shape[0])
         img_resized = _preprocess_yolov3(img, self.input_shape)
