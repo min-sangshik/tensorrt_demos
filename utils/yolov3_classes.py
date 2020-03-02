@@ -86,6 +86,15 @@ COCO_CLASSES_LIST = [
     'toothbrush',
 ]
 
+DEEPFAMILY_CLASSES_LIST = [
+    'dummy',
+    'jason',
+    'jessica',
+    'erica',
+    'woo',
+    'woong',
+]
+
 # For translating YOLOv3 class ids (0~79) to SSD class ids (0~90)
 yolov3_cls_to_ssd = [
     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -100,6 +109,8 @@ def get_cls_dict(model):
     """Get the class ID to name translation dictionary."""
     if model == 'coco':
         cls_list = COCO_CLASSES_LIST
+    elif model == 'deepfamily':
+        cls_list = DEEPFAMILY_CLASSES_LIST
     else:
         raise ValueError('Bad model name')
     return {i: n for i, n in enumerate(cls_list)}
