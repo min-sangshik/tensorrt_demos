@@ -7,8 +7,9 @@ TensorRT optimized YOLOv3 engine.
 import os
 import sys
 import time
+import random
 import numpy as np
-from datetime import datetime
+import subprocess
 import argparse
 
 import cv2
@@ -54,6 +55,7 @@ def loop_and_detect(cam, trt_yolov3, conf_th, vis):
     while True:
         if cv2.getWindowProperty(WINDOW_NAME, 0) < 0:
             break
+
         img = cam.read()
         if img is not None:
             boxes, confs, clss = trt_yolov3.detect(img, conf_th)
@@ -63,24 +65,31 @@ def loop_and_detect(cam, trt_yolov3, conf_th, vis):
             if len(clss) > 0:
                 print("Detected : ",clss, ", ", confs)
                 detectandspeech[clss, 0] = tic
-                if detectandspeech[clss, 0] - detectandspeech[clss, 1] > 10:
+                if detectandspeech[clss, 0] - detectandspeech[clss, 1] > 60:
                     detectandspeech[clss, 1] = tic
                     print("Played : ",clss)
+                    MusicPlayCheck(clss)
+
                     if clss == 1:
-                        os.system('mpg321 /home/mikado2/github/yolov3-tensorrt/voice/jason.mp3 & > /dev/null')
+                        os.system('mpg321 voice/jason.mp3 & > /dev/null')
                     elif clss == 2:
-                        os.system('mpg321 /home/mikado2/github/yolov3-tensorrt/voice/jessica.mp3 & > /dev/null')
+                        os.system('mpg321 voice/jessica.mp3 & > /dev/null')
                     elif clss == 3:
-                        os.system('mpg321 /home/mikado2/github/yolov3-tensorrt/voice/erica.mp3 & > /dev/null')
+                        os.system('mpg321 voice/erica.mp3 & > /dev/null')
                     elif clss == 4:
-                        os.system('mpg321 /home/mikado2/github/yolov3-tensorrt/voice/woo.mp3 & > /dev/null')
+                        os.system('mpg321 voice/woo.mp3 & > /dev/null')
                     elif clss == 5:
-                        os.system('mpg321 /home/mikado2/github/yolov3-tensorrt/voice/woong.mp3 & > /dev/null')
+                        os.system('mpg321 voice/woong.mp3 & > /dev/null')
+
+                
 
             ###########################
-            img = vis.draw_bboxes(img, boxes, confs, clss)
-            img = show_fps(img, fps)
-            cv2.imshow(WINDOW_NAME, img)
+            draw = 1
+            if draw is not 0:
+                img = vis.draw_bboxes(img, boxes, confs, clss)
+                img = show_fps(img, fps)
+                cv2.imshow(WINDOW_NAME, img)
+
             toc = time.time()
             curr_fps = 1.0 / (toc - tic)
             # calculate an exponentially decaying average of fps number
@@ -94,8 +103,35 @@ def loop_and_detect(cam, trt_yolov3, conf_th, vis):
             set_display(WINDOW_NAME, full_scrn)
         time.sleep(0.05)
 
+def MusicPlayCheck(clss):
+    ps = subprocess.Popen(['ps', '-A'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT).communicate()[0]
+    if str(ps).find('mpg321') > 0:
+        print("Background Music is Playing now")
+        return
 
-# python3 trt_yolov3_deepfamily1.py --model yolov3-416 --vid 1 --width 1280 --height 720
+    jason_music_list   = ["sleepingsun.mp3", "Nemo.mp3", "Over The Hills And Far Away.mp3", "Wishmaster.mp3"]
+    jessica_music_list = ["vivaldi-1.mp3","vivaldi-2.mp3","vivaldi-3.mp3","vivaldi-4.mp3"]
+    erica_music_list   = ["Mozart_Symphony_41.mp3", "Saint_Saens_Carnival_of_the_Animals_Finale.mp3"]
+
+    music_list = []
+    if clss == 1:
+        music_list = jason_music_list
+    elif clss == 2:
+        music_list = jessica_music_list
+    elif clss == 3:
+        music_list = erica_music_list
+    else:
+        return
+
+    music_list_count = len(music_list)
+    randselect = random.randint(0, music_list_count-1)
+
+    print("BG Song is ",music_list[randselect])
+    os.system("mpg321 voice/"+music_list[randselect]+" & > /dev/null")                
+         
+    return 
+
+# python3 trt_yolov3_deepfamily1.py --model yolov3-416 --vid 0 --width 1280 --height 720
 def main():
     args = parse_args()
 
@@ -117,12 +153,12 @@ def main():
     cam.start()
 
     #CAM-WINDOW
-    open_window(WINDOW_NAME, args.image_width, args.image_height,
-                'DEEPFAMILY PROJECT - TensorRT YOLOv3')
+    open_window(WINDOW_NAME, args.image_width, args.image_height, 'DEEPFAMILY PROJECT - TensorRT YOLOv3')
     vis = BBoxVisualization(cls_dict)
 
     #DETECT-LOOP
     loop_and_detect(cam, trt_yolov3, conf_th=0.95, vis=vis)
+    #loop_and_detect(cam, trt_yolov3, conf_th=0.95)
 
     cam.stop()
     cam.release()
